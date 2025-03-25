@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SignMeLad Demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .container {
+      max-width: 800px;
+      margin-top: 50px;
+    }
+    .card {
+      margin-bottom: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border: none;
+    }
+    .card-header {
+      background-color: #ffffff;
+      border-bottom: 1px solid #e9ecef;
+      border-radius: 10px 10px 0 0 !important;
+    }
+    pre {
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .hidden {
+      display: none;
+    }
+    .btn {
+      border-radius: 5px;
+      font-weight: 500;
+    }
+    .logo {
+      width: 40px;
+      height: 40px;
+      margin-right: 10px;
+    }
+    .header-flex {
+      display: flex;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="text-center mb-4">
+      <h1><i class="bi bi-shield-lock"></i> SignMeLad Demo</h1>
+      <p class="text-muted">A demonstration of wallet-based authentication with Solana</p>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <div class="header-flex">
+          <i class="bi bi-wallet2 fs-4"></i>
+          <h5 class="ms-2 mb-0">Wallet Connection</h5>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="wallet-status" class="alert alert-secondary">
+          Waiting for wallet connection...
+        </div>
+        
+        <button id="connect-button" class="btn btn-primary">
+          <i class="bi bi-link-45deg"></i> Connect Wallet
+        </button>
+        <button id="disconnect-button" class="btn btn-danger ms-2 hidden">
+          <i class="bi bi-x-circle"></i> Disconnect
+        </button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <div class="header-flex">
+          <i class="bi bi-key fs-4"></i>
+          <h5 class="ms-2 mb-0">Authentication</h5>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="auth-status" class="alert alert-secondary">
+          You need to connect to a wallet first.
+        </div>
+        
+        <button id="login-button" class="btn btn-success" disabled>
+          <i class="bi bi-box-arrow-in-right"></i> Login
+        </button>
+        <button id="logout-button" class="btn btn-warning ms-2 hidden">
+          <i class="bi bi-box-arrow-left"></i> Logout
+        </button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <div class="header-flex">
+          <i class="bi bi-lock fs-4"></i>
+          <h5 class="ms-2 mb-0">Protected Content</h5>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="protected-content" class="alert alert-secondary">
+          You need to login to see protected content.
+        </div>
+        
+        <button id="protected-button" class="btn btn-info" disabled>
+          <i class="bi bi-shield-check"></i> Fetch Protected Content
+        </button>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header">
+        <div class="header-flex">
+          <i class="bi bi-terminal fs-4"></i>
+          <h5 class="ms-2 mb-0">Results</h5>
+        </div>
+      </div>
+      <div class="card-body">
+        <pre id="result-output">// Results will be displayed here</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- SDK and application scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bs58@5.0.0/dist/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl-fast.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

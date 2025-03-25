@@ -1,0 +1,18 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs",
+  "name": "Solana SSO SDK",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeExternals": true,
+  "excludeInternal": true,
+  "theme": "default",
+  "includeVersion": true,
+  "readme": "README.md",
+  "categorizeByGroup": true,
+  "categoryOrder": ["Core", "Authentication", "Utilities", "*"],
+  "sort": ["alphabetical"],
+  "navigationLinks": {
+    "GitHub": "https://github.com/username/solana-sso-sdk"
+  }
+}

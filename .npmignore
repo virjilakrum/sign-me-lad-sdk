@@ -1,0 +1,37 @@
+# Source files
+src/
+tests/
+
+# Development files
+.eslintrc.json
+.prettierrc
+.gitignore
+.github/
+tsconfig.json
+jest.config.js
+jest.setup.js
+*.bak
+
+# Demo application
+demo/
+
+# Build artifacts
+coverage/
+docs/
+.nyc_output/
+
+# Node modules
+node_modules/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log

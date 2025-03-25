@@ -1,0 +1,75 @@
+/**
+ * Core interface for the Solana SSO functionality
+ */
+export interface SolanaSSO {
+  /**
+   * Connects to a Solana wallet
+   * @returns Wallet public key
+   */
+  connect(): Promise<string>;
+  
+  /**
+   * Performs authentication using the wallet
+   * @param message Custom authentication message (optional)
+   * @returns Authentication result
+   */
+  authenticate(message?: string): Promise<AuthResult>;
+  
+  /**
+   * Verifies a signature
+   * @param signature Signature to verify
+   * @param message Message that was signed
+   * @param publicKey Wallet public key
+   * @returns Verification result (true/false)
+   */
+  verify(signature: string, message: string, publicKey: string): boolean;
+  
+  /**
+   * Disconnects from the wallet
+   */
+  disconnect(): void;
+}
+
+/**
+ * Authentication result interface
+ */
+export interface AuthResult {
+  /** Wallet public key */
+  publicKey: string;
+  /** Signature */
+  signature: string;
+  /** Message that was signed */
+  message: string;
+  /** Timestamp of the authentication */
+  timestamp: number;
+  /** Optional JWT token */
+  token?: string;
+}
+
+/**
+ * Solana wallet interface
+ */
+export interface SolanaWallet {
+  /** Wallet public key */
+  publicKey: string | null;
+  /** Connection status */
+  isConnected: boolean;
+  /** Method to sign a message */
+  signMessage(message: Uint8Array): Promise<Uint8Array>;
+  /** Method to connect to the wallet */
+  connect(): Promise<{ publicKey: string }>;
+  /** Method to disconnect from the wallet */
+  disconnect(): Promise<void>;
+}
+
+/**
+ * Configuration options for the Solana SSO SDK
+ */
+export interface SolanaConfigOptions {
+  /** Solana network to connect to */
+  network?: 'mainnet-beta' | 'testnet' | 'devnet';
+  /** Whether to automatically connect to the wallet */
+  autoConnect?: boolean;
+  /** Session duration in milliseconds */
+  sessionDuration?: number;
+}

@@ -1,0 +1,88 @@
+{
+  "name": "signmelad",
+  "version": "0.1.0",
+  "description": "Simple and secure Solana wallet authentication SDK with real implementations",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint 'src/**/*.ts'",
+    "lint:fix": "eslint 'src/**/*.ts' --fix",
+    "prepare": "npm run build",
+    "docs": "typedoc --out docs src",
+    "clean": "rimraf dist coverage docs",
+    "prebuild": "npm run clean",
+    "preversion": "npm run lint && npm test",
+    "postversion": "git push && git push --tags",
+    "security": "npm audit",
+    "release": "npm publish --access public"
+  },
+  "keywords": [
+    "solana",
+    "sso",
+    "authentication",
+    "blockchain",
+    "wallet",
+    "signin",
+    "web3",
+    "crypto",
+    "typescript"
+  ],
+  "author": "SignMeLad Contributors",
+  "license": "MIT",
+  "dependencies": {
+    "@solana/web3.js": "^1.73.0",
+    "tweetnacl": "^1.0.3",
+    "bs58": "^5.0.0",
+    "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^4.9.4",
+    "jest": "^29.3.1",
+    "ts-jest": "^29.0.3",
+    "@types/jest": "^29.2.5",
+    "@types/jsonwebtoken": "^9.0.0",
+    "eslint": "^8.31.0",
+    "@typescript-eslint/eslint-plugin": "^5.48.0",
+    "@typescript-eslint/parser": "^5.48.0",
+    "typedoc": "^0.23.24",
+    "rimraf": "^4.1.1",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.1.0",
+    "prettier": "^2.8.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  },
+  "files": [
+    "dist/**/*",
+    "LICENSE",
+    "README.md",
+    "BROWSER_COMPATIBILITY.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/username/signmelad.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "bugs": {
+    "url": "https://github.com/username/signmelad/issues"
+  },
+  "homepage": "https://github.com/username/signmelad#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
