@@ -11,14 +11,48 @@ const walletStatus = document.getElementById('wallet-status');
 const authStatus = document.getElementById('auth-status');
 const protectedContent = document.getElementById('protected-content');
 const resultOutput = document.getElementById('result-output');
+const sdkInfo = document.getElementById('sdk-info');
 
 // State variables
-let currentWallet = null;
-let publicKey = null;
 let authToken = null;
+let solanaAuth = null;
+
+// Initialize SignMeLad SDK
+function initializeSDK() {
+  try {
+    // Check if SDK is loaded
+    if (typeof SignMeLad === 'undefined' || !SignMeLad.SolanaAuth) {
+      sdkInfo.className = 'alert alert-danger';
+      sdkInfo.innerHTML = '<i class="bi bi-exclamation-triangle"></i> SignMeLad SDK not loaded properly.';
+      return false;
+    }
+
+    // Initialize the SDK with options
+    solanaAuth = new SignMeLad.SolanaAuth({
+      network: 'devnet',
+      debug: true,
+      autoConnect: false
+    });
+
+    // Display SDK information
+    sdkInfo.className = 'alert alert-info';
+    sdkInfo.innerHTML = `<i class="bi bi-info-circle"></i> SignMeLad SDK ${SignMeLad.SDK_VERSION} initialized successfully.`;
+    
+    return true;
+  } catch (error) {
+    sdkInfo.className = 'alert alert-danger';
+    sdkInfo.innerHTML = `<i class="bi bi-exclamation-triangle"></i> Error initializing SDK: ${error.message}`;
+    return false;
+  }
+}
 
 // Check token on page load
 document.addEventListener('DOMContentLoaded', () => {
+  // Initialize the SDK
+  if (!initializeSDK()) {
+    return;
+  }
+
   // Check for token in localStorage
   authToken = localStorage.getItem('authToken');
   
@@ -26,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     verifyToken(authToken);
   }
   
-  // Check wallet connection
+  // Check wallet connection status
   checkWalletConnection();
 });
 
@@ -71,67 +105,43 @@ protectedButton.addEventListener('click', async () => {
   }
 });
 
-// Detect Solana wallet
-function detectWallet() {
-  // Phantom Wallet
-  if (window.phantom?.solana) {
-    return window.phantom.solana;
-  }
-  
-  // Solflare Wallet
-  if (window.solflare) {
-    return window.solflare;
-  }
-  
-  // Sollet Wallet
-  if (window.sollet) {
-    return window.sollet;
-  }
-  
-  // Slope Wallet
-  if (window.slope) {
-    return window.slope;
-  }
-  
-  return null;
-}
-
 // Check wallet connection
-function checkWalletConnection() {
-  currentWallet = detectWallet();
-  
-  if (!currentWallet) {
+async function checkWalletConnection() {
+  try {
+    const status = solanaAuth.getStatus();
+    
+    if (status.isConnected) {
+      updateWalletUI(true, status.publicKey);
+    } else {
+      updateWalletUI(false);
+    }
+  } catch (error) {
     walletStatus.className = 'alert alert-danger';
-    walletStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> No supported Solana wallet found. Please install Phantom, Solflare, or Sollet wallet.';
-    return;
-  }
-  
-  if (currentWallet.isConnected) {
-    publicKey = currentWallet.publicKey.toString();
-    updateWalletUI(true);
-  } else {
-    updateWalletUI(false);
+    walletStatus.innerHTML = `<i class="bi bi-exclamation-triangle"></i> Error checking wallet: ${error.message}`;
   }
 }
 
 // Connect to wallet
 async function connectWallet() {
-  currentWallet = detectWallet();
-  
-  if (!currentWallet) {
-    throw new Error('No supported Solana wallet found.');
-  }
-  
   try {
-    const resp = await currentWallet.connect();
-    publicKey = resp.publicKey.toString();
+    // Using the SDK to connect to wallet
+    const publicKey = await solanaAuth.connect();
     
-    updateWalletUI(true);
+    updateWalletUI(true, publicKey);
     updateResultOutput('Wallet Connection', {
       status: 'Success',
       publicKey
     });
   } catch (error) {
+    // Check for specific error types from the SDK
+    if (error instanceof SignMeLad.WalletNotFoundError) {
+      walletStatus.className = 'alert alert-danger';
+      walletStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> No supported Solana wallet found. Please install Phantom, Solflare, or Sollet wallet.';
+    } else if (error instanceof SignMeLad.WalletConnectionError) {
+      walletStatus.className = 'alert alert-warning';
+      walletStatus.innerHTML = '<i class="bi bi-exclamation-circle"></i> Connection request rejected. Please try again.';
+    }
+    
     updateWalletUI(false);
     throw error;
   }
@@ -139,13 +149,9 @@ async function connectWallet() {
 
 // Disconnect from wallet
 async function disconnectWallet() {
-  if (!currentWallet) {
-    return;
-  }
-  
   try {
-    await currentWallet.disconnect();
-    publicKey = null;
+    // Using the SDK to disconnect
+    await solanaAuth.disconnect();
     
     // Also logout
     logout();
@@ -161,23 +167,9 @@ async function disconnectWallet() {
 
 // Authenticate
 async function authenticate() {
-  if (!currentWallet || !publicKey) {
-    throw new Error('You must connect to a wallet first.');
-  }
-  
   try {
-    // Create message to sign
-    const timestamp = Date.now();
-    const message = `By signing this message, you are authenticating with your wallet address ${publicKey}.
-
-This action does not initiate any transaction or transfer any funds from your wallet.
-
-Timestamp: ${timestamp}`;
-    
-    // Sign the message
-    const encodedMessage = new TextEncoder().encode(message);
-    const signatureBytes = await currentWallet.signMessage(encodedMessage);
-    const signature = bs58.encode(signatureBytes);
+    // Using SDK to authenticate
+    const authResult = await solanaAuth.authenticate();
     
     // Send to backend
     const response = await fetch(`${API_URL}/api/auth`, {
@@ -185,12 +177,7 @@ Timestamp: ${timestamp}`;
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        publicKey,
-        signature,
-        message,
-        timestamp
-      })
+      body: JSON.stringify(authResult)
     });
     
     const data = await response.json();
@@ -203,13 +190,22 @@ Timestamp: ${timestamp}`;
     authToken = data.token;
     localStorage.setItem('authToken', authToken);
     
-    updateAuthUI(true);
+    updateAuthUI(true, authResult.publicKey);
     updateResultOutput('Authentication', {
       status: 'Success',
       token: data.token,
       user: data.user
     });
   } catch (error) {
+    // Check for specific error types from the SDK
+    if (error instanceof SignMeLad.WalletNotConnectedError) {
+      authStatus.className = 'alert alert-warning';
+      authStatus.innerHTML = '<i class="bi bi-exclamation-circle"></i> Please connect your wallet first.';
+    } else if (error instanceof SignMeLad.SigningError) {
+      authStatus.className = 'alert alert-danger';
+      authStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> User rejected message signing.';
+    }
+    
     throw error;
   }
 }
@@ -228,8 +224,8 @@ async function verifyToken(token) {
     const data = await response.json();
     
     if (data.success) {
-      publicKey = data.user.publicKey;
-      updateAuthUI(true);
+      const publicKey = data.user.publicKey;
+      updateAuthUI(true, publicKey);
       updateResultOutput('Token Verification', {
         status: 'Success',
         user: data.user
@@ -291,7 +287,7 @@ async function getProtectedContent() {
 }
 
 // Update wallet UI
-function updateWalletUI(isConnected) {
+function updateWalletUI(isConnected, publicKey = null) {
   if (isConnected && publicKey) {
     walletStatus.className = 'alert alert-success';
     walletStatus.innerHTML = `<i class="bi bi-check-circle"></i> Connected: <span class="fw-bold">${publicKey.slice(0, 6)}...${publicKey.slice(-4)}</span> <span class="text-muted">(${publicKey})</span>`;
@@ -315,8 +311,8 @@ function updateWalletUI(isConnected) {
 }
 
 // Update authentication UI
-function updateAuthUI(isAuthenticated) {
-  if (isAuthenticated) {
+function updateAuthUI(isAuthenticated, publicKey = null) {
+  if (isAuthenticated && publicKey) {
     authStatus.className = 'alert alert-success';
     authStatus.innerHTML = `<i class="bi bi-person-check"></i> Logged in: <span class="fw-bold">${publicKey.slice(0, 6)}...${publicKey.slice(-4)}</span>`;
     
@@ -326,7 +322,9 @@ function updateAuthUI(isAuthenticated) {
     protectedButton.disabled = false;
   } else {
     authStatus.className = 'alert alert-secondary';
-    authStatus.innerHTML = publicKey ? 'Login to authenticate with your wallet.' : 'You need to connect to a wallet first.';
+    authStatus.innerHTML = solanaAuth && solanaAuth.getStatus().isConnected ? 
+      'Login to authenticate with your wallet.' : 
+      'You need to connect to a wallet first.';
     
     loginButton.classList.remove('hidden');
     logoutButton.classList.add('hidden');

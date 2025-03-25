@@ -2,9 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
-const jwt = require('jsonwebtoken');
 const morgan = require('morgan');
-const { verifySignature } = require('../../dist/server');
+const { verifySignature, createAuthToken, createAuthMiddleware } = require('../../dist/server');
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +19,13 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 app.use(morgan('dev')); // Request logging
+
+// Configure JWT options
+const jwtOptions = {
+  expiresIn: '24h',
+  issuer: 'signmelad-demo',
+  audience: 'demo-app'
+};
 
 // Routes
 app.get('/', (req, res) => {
@@ -46,14 +52,11 @@ app.post('/api/auth', (req, res) => {
       return res.status(401).json({ error: 'Invalid signature' });
     }
     
-    // Create JWT token
-    const token = jwt.sign(
-      {
-        publicKey: publicKey,
-        timestamp: timestamp
-      },
+    // Create JWT token using the SDK's function
+    const token = createAuthToken(
+      { publicKey, signature, message, timestamp },
       JWT_SECRET,
-      { expiresIn: '24h' }
+      jwtOptions
     );
     
     // Return successful response
@@ -67,7 +70,7 @@ app.post('/api/auth', (req, res) => {
     
   } catch (error) {
     console.error('Authentication error:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: error.message || 'Server error' });
   }
 });
 
@@ -80,49 +83,34 @@ app.post('/api/verify', (req, res) => {
       return res.status(400).json({ error: 'Token missing' });
     }
     
-    // Verify token
-    const decoded = jwt.verify(token, JWT_SECRET);
-    
-    res.json({ 
-      success: true, 
-      user: {
-        publicKey: decoded.publicKey
+    // We'll use the middleware to verify the token
+    createAuthMiddleware(JWT_SECRET, jwtOptions)(
+      { headers: { authorization: `Bearer ${token}` } },
+      res,
+      () => {
+        res.json({ 
+          success: true, 
+          user: {
+            publicKey: req.user.publicKey
+          }
+        });
       }
-    });
+    );
     
   } catch (error) {
     console.error('Token verification error:', error);
-    res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(401).json({ error: error.message || 'Invalid or expired token' });
   }
 });
 
 // Protected API endpoint example
-app.get('/api/protected', authenticateToken, (req, res) => {
+app.get('/api/protected', createAuthMiddleware(JWT_SECRET, jwtOptions), (req, res) => {
   res.json({ 
     success: true, 
     message: 'This is a protected endpoint',
     user: req.user
   });
 });
-
-// JWT token verification middleware
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ error: 'Authorization token missing' });
-  }
-  
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
-    }
-    
-    req.user = user;
-    next();
-  });
-}
 
 // Start server
 app.listen(port, () => {

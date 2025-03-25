@@ -129,11 +129,26 @@
         <pre id="result-output">// Results will be displayed here</pre>
       </div>
     </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="header-flex">
+          <i class="bi bi-info-circle fs-4"></i>
+          <h5 class="ms-2 mb-0">SDK Information</h5>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="sdk-info" class="alert alert-info">
+          Loading SDK information...
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- SDK and application scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bs58@5.0.0/dist/index.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl-fast.min.js"></script>
+  <script src="../../dist/bundle.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
